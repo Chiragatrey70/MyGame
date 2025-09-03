@@ -21,6 +21,7 @@ public class Package : MonoBehaviour
             Debug.Log("Package picked up by player!");
 
             // TODO: Tell the GameManager to find a new location
+            GameManager.Instance.OnPackagePickedUp();
 
             // Destroy the package object
             Destroy(gameObject);
