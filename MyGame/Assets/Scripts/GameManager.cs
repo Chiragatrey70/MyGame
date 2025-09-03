@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
 
     [Header("UI Elements")]
     public TextMeshProUGUI timerText;
+    public TextMeshProUGUI deliveriesCounterText; // NEW: Reference for the counter text
     public GameObject gameOverPanel;
     public GameObject pauseMenuPanel;
 
@@ -26,6 +27,7 @@ public class GameManager : MonoBehaviour
     [Header("Game State")]
     public bool isGameOver = false;
     public bool isPaused = false;
+    private int deliveriesCompleted = 0; // NEW: Variable to track deliveries
     private GameObject currentPackage;
     private GameObject currentDropOff;
     private int lastSpawnIndex = -1;
@@ -37,7 +39,7 @@ public class GameManager : MonoBehaviour
     public RectTransform minimapRect;
 
     [Header("Audio")]
-    public CarAudio playerCarAudio; // Reference to the car's audio script
+    public CarAudio playerCarAudio;
 
     void Awake()
     {
@@ -55,6 +57,9 @@ public class GameManager : MonoBehaviour
         gameOverPanel.SetActive(false);
         pauseMenuPanel.SetActive(false);
         isGameOver = false;
+
+        deliveriesCompleted = 0; // NEW: Initialize the counter at the start
+        UpdateDeliveriesUI();    // NEW: Update the UI text at the start
 
         if (playerCarController != null) playerCarController.enabled = true;
 
@@ -89,6 +94,32 @@ public class GameManager : MonoBehaviour
         UpdateTimerUI();
     }
 
+    public void OnPackageDelivered()
+    {
+        if (isGameOver || isPaused) return;
+        if (currentDropOff != null)
+        {
+            Destroy(currentDropOff);
+            currentDropOff = null;
+            currentTime += timeBonus;
+
+            deliveriesCompleted++;      // NEW: Increment the counter on delivery
+            UpdateDeliveriesUI();       // NEW: Update the UI text
+
+            SpawnNewPackage();
+        }
+    }
+
+    // NEW: Function to update the deliveries counter text
+    void UpdateDeliveriesUI()
+    {
+        if (deliveriesCounterText != null)
+        {
+            deliveriesCounterText.text = "Deliveries: " + deliveriesCompleted;
+        }
+    }
+
+    // --- Other existing functions (PauseGame, ResumeGame, etc.) ---
     public void PauseGame()
     {
         isPaused = true;
@@ -96,7 +127,7 @@ public class GameManager : MonoBehaviour
         pauseMenuPanel.SetActive(true);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        if (playerCarAudio != null) playerCarAudio.PauseSound(); // Pause engine sound
+        if (playerCarAudio != null) playerCarAudio.PauseSound();
     }
 
     public void ResumeGame()
@@ -106,7 +137,7 @@ public class GameManager : MonoBehaviour
         pauseMenuPanel.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        if (playerCarAudio != null) playerCarAudio.ResumeSound(); // Resume engine sound
+        if (playerCarAudio != null) playerCarAudio.ResumeSound();
     }
 
     public void ReturnToMainMenu()
@@ -165,18 +196,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void OnPackageDelivered()
-    {
-        if (isGameOver || isPaused) return;
-        if (currentDropOff != null)
-        {
-            Destroy(currentDropOff);
-            currentDropOff = null;
-            currentTime += timeBonus;
-            SpawnNewPackage();
-        }
-    }
-
     void UpdateTimerUI()
     {
         if (timerText != null)
@@ -194,7 +213,7 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         if (playerCarController != null) playerCarController.enabled = false;
-        if (playerCarAudio != null) playerCarAudio.StopSound(); // Stop engine sound completely
+        if (playerCarAudio != null) playerCarAudio.StopSound();
     }
 
     public void RestartGame()
