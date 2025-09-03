@@ -14,8 +14,9 @@ public class GameManager : MonoBehaviour
     public CarController playerCarController;
 
     [Header("UI Elements")]
+    public GameObject inGameHUD; // NEW: Reference for the entire HUD group
     public TextMeshProUGUI timerText;
-    public TextMeshProUGUI deliveriesCounterText; // NEW: Reference for the counter text
+    public TextMeshProUGUI deliveriesCounterText;
     public GameObject gameOverPanel;
     public GameObject pauseMenuPanel;
 
@@ -27,7 +28,7 @@ public class GameManager : MonoBehaviour
     [Header("Game State")]
     public bool isGameOver = false;
     public bool isPaused = false;
-    private int deliveriesCompleted = 0; // NEW: Variable to track deliveries
+    private int deliveriesCompleted = 0;
     private GameObject currentPackage;
     private GameObject currentDropOff;
     private int lastSpawnIndex = -1;
@@ -54,12 +55,13 @@ public class GameManager : MonoBehaviour
         Cursor.visible = false;
 
         currentTime = startingTime;
+        if (inGameHUD != null) inGameHUD.SetActive(true); // NEW: Ensure HUD is on at start
         gameOverPanel.SetActive(false);
         pauseMenuPanel.SetActive(false);
         isGameOver = false;
 
-        deliveriesCompleted = 0; // NEW: Initialize the counter at the start
-        UpdateDeliveriesUI();    // NEW: Update the UI text at the start
+        deliveriesCompleted = 0;
+        UpdateDeliveriesUI();
 
         if (playerCarController != null) playerCarController.enabled = true;
 
@@ -94,37 +96,12 @@ public class GameManager : MonoBehaviour
         UpdateTimerUI();
     }
 
-    public void OnPackageDelivered()
-    {
-        if (isGameOver || isPaused) return;
-        if (currentDropOff != null)
-        {
-            Destroy(currentDropOff);
-            currentDropOff = null;
-            currentTime += timeBonus;
-
-            deliveriesCompleted++;      // NEW: Increment the counter on delivery
-            UpdateDeliveriesUI();       // NEW: Update the UI text
-
-            SpawnNewPackage();
-        }
-    }
-
-    // NEW: Function to update the deliveries counter text
-    void UpdateDeliveriesUI()
-    {
-        if (deliveriesCounterText != null)
-        {
-            deliveriesCounterText.text = "Deliveries: " + deliveriesCompleted;
-        }
-    }
-
-    // --- Other existing functions (PauseGame, ResumeGame, etc.) ---
     public void PauseGame()
     {
         isPaused = true;
         Time.timeScale = 0f;
-        pauseMenuPanel.SetActive(true);
+        if (inGameHUD != null) inGameHUD.SetActive(false); // NEW: Hide HUD
+        pauseMenuPanel.SetActive(true); // CORRECTED: Removed hyphen
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         if (playerCarAudio != null) playerCarAudio.PauseSound();
@@ -134,10 +111,49 @@ public class GameManager : MonoBehaviour
     {
         isPaused = false;
         Time.timeScale = 1f;
+        if (inGameHUD != null) inGameHUD.SetActive(true); // NEW: Show HUD
         pauseMenuPanel.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         if (playerCarAudio != null) playerCarAudio.ResumeSound();
+    }
+
+    void GameOver()
+    {
+        if (isGameOver) return;
+        isGameOver = true;
+        Time.timeScale = 0f;
+        if (inGameHUD != null) inGameHUD.SetActive(false); // NEW: Hide HUD
+        gameOverPanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        if (playerCarController != null) playerCarController.enabled = false;
+        if (playerCarAudio != null) playerCarAudio.StopSound();
+    }
+
+    // --- Other existing functions ---
+    public void OnPackageDelivered()
+    {
+        if (isGameOver || isPaused) return;
+        if (currentDropOff != null)
+        {
+            Destroy(currentDropOff);
+            currentDropOff = null;
+            currentTime += timeBonus;
+
+            deliveriesCompleted++;
+            UpdateDeliveriesUI();
+
+            SpawnNewPackage();
+        }
+    }
+
+    void UpdateDeliveriesUI()
+    {
+        if (deliveriesCounterText != null)
+        {
+            deliveriesCounterText.text = "Deliveries: " + deliveriesCompleted;
+        }
     }
 
     public void ReturnToMainMenu()
@@ -202,18 +218,6 @@ public class GameManager : MonoBehaviour
         {
             timerText.text = "Time: " + Mathf.RoundToInt(currentTime);
         }
-    }
-
-    void GameOver()
-    {
-        if (isGameOver) return;
-        isGameOver = true;
-        Time.timeScale = 0f;
-        gameOverPanel.SetActive(true);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        if (playerCarController != null) playerCarController.enabled = false;
-        if (playerCarAudio != null) playerCarAudio.StopSound();
     }
 
     public void RestartGame()
