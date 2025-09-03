@@ -11,10 +11,12 @@ public class GameManager : MonoBehaviour
     public GameObject packagePrefab;
     public GameObject dropOffPrefab;
     public List<Transform> spawnPoints;
+    public CarController playerCarController;
 
     [Header("UI Elements")]
     public TextMeshProUGUI timerText;
-    public GameObject gameOverPanel; // For later use
+    public GameObject gameOverPanel;
+    public GameObject pauseMenuPanel;
 
     [Header("Game Settings")]
     public float startingTime = 60f;
@@ -23,6 +25,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Game State")]
     public bool isGameOver = false;
+    public bool isPaused = false;
     private GameObject currentPackage;
     private GameObject currentDropOff;
     private int lastSpawnIndex = -1;
@@ -33,32 +36,34 @@ public class GameManager : MonoBehaviour
     public Camera minimapCamera;
     public RectTransform minimapRect;
 
+    [Header("Audio")]
+    public CarAudio playerCarAudio; // Reference to the car's audio script
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     void Start()
     {
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
         currentTime = startingTime;
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        gameOverPanel.SetActive(false);
+        pauseMenuPanel.SetActive(false);
         isGameOver = false;
 
-        // Set up the minimap icon's references
+        if (playerCarController != null) playerCarController.enabled = true;
+
         if (objectiveIcon != null)
         {
             objectiveIcon.player = playerTransform;
             objectiveIcon.minimapCamera = minimapCamera;
             objectiveIcon.mapRect = minimapRect;
-            objectiveIcon.gameObject.SetActive(false); // Start with it hidden
+            objectiveIcon.gameObject.SetActive(false);
         }
 
         SpawnNewPackage();
@@ -66,7 +71,14 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (isGameOver) return;
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isGameOver) return;
+            if (isPaused) ResumeGame();
+            else PauseGame();
+        }
+
+        if (isGameOver || isPaused) return;
 
         currentTime -= Time.deltaTime;
         if (currentTime <= 0)
@@ -75,6 +87,32 @@ public class GameManager : MonoBehaviour
             GameOver();
         }
         UpdateTimerUI();
+    }
+
+    public void PauseGame()
+    {
+        isPaused = true;
+        Time.timeScale = 0f;
+        pauseMenuPanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        if (playerCarAudio != null) playerCarAudio.PauseSound(); // Pause engine sound
+    }
+
+    public void ResumeGame()
+    {
+        isPaused = false;
+        Time.timeScale = 1f;
+        pauseMenuPanel.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        if (playerCarAudio != null) playerCarAudio.ResumeSound(); // Resume engine sound
+    }
+
+    public void ReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenuScene");
     }
 
     void SpawnNewPackage()
@@ -90,7 +128,6 @@ public class GameManager : MonoBehaviour
 
         currentPackage = Instantiate(packagePrefab, spawnPoints[spawnIndex].position, spawnPoints[spawnIndex].rotation);
 
-        // Tell icon to track the new package
         if (objectiveIcon != null)
         {
             objectiveIcon.SetTarget(currentPackage.transform);
@@ -108,11 +145,8 @@ public class GameManager : MonoBehaviour
         lastSpawnIndex = spawnIndex;
 
         currentDropOff = Instantiate(dropOffPrefab, spawnPoints[spawnIndex].position, spawnPoints[spawnIndex].rotation);
-
-        // This line was missing in some versions, ensure it's here
         if (currentDropOff != null) currentDropOff.SetActive(true);
 
-        // Tell icon to track the new drop-off zone
         if (objectiveIcon != null && currentDropOff != null)
         {
             objectiveIcon.SetTarget(currentDropOff.transform);
@@ -122,6 +156,7 @@ public class GameManager : MonoBehaviour
 
     public void OnPackagePickedUp()
     {
+        if (isGameOver || isPaused) return;
         if (currentPackage != null)
         {
             Destroy(currentPackage);
@@ -132,6 +167,7 @@ public class GameManager : MonoBehaviour
 
     public void OnPackageDelivered()
     {
+        if (isGameOver || isPaused) return;
         if (currentDropOff != null)
         {
             Destroy(currentDropOff);
@@ -151,9 +187,14 @@ public class GameManager : MonoBehaviour
 
     void GameOver()
     {
+        if (isGameOver) return;
         isGameOver = true;
-        Debug.Log("GAME OVER!");
-        // We will add the UI panel logic here later
+        Time.timeScale = 0f;
+        gameOverPanel.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        if (playerCarController != null) playerCarController.enabled = false;
+        if (playerCarAudio != null) playerCarAudio.StopSound(); // Stop engine sound completely
     }
 
     public void RestartGame()

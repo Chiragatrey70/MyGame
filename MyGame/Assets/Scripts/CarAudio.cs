@@ -1,48 +1,55 @@
 using UnityEngine;
 
-// This ensures the necessary components are on the car.
-[RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(AudioSource))]
+[RequireComponent(typeof(AudioSource), typeof(Rigidbody))]
 public class CarAudio : MonoBehaviour
 {
-    [Header("Audio Settings")]
     public AudioClip engineSound;
     [Range(0.5f, 2.5f)] public float minPitch = 0.8f;
-    [Range(1.0f, 4.0f)] public float maxPitch = 2.5f;
-    [Range(50f, 200f)] public float maxSpeedForPitch = 150f; // The speed (in KM/H) at which the engine reaches max pitch
+    [Range(1.5f, 4.5f)] public float maxPitch = 2.5f;
+    [Range(10f, 100f)] public float maxSpeedForPitch = 50f;
 
-    private Rigidbody rb;
     private AudioSource audioSource;
+    private Rigidbody rb;
 
-    void Start()
+    void Awake()
     {
-        // Get the components from the car
-        rb = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
+        rb = GetComponent<Rigidbody>();
 
-        // Set up the audio source to play our engine sound
         audioSource.clip = engineSound;
         audioSource.loop = true;
-        audioSource.spatialBlend = 1.0f; // Make it 3D sound
+        audioSource.playOnAwake = true;
+        audioSource.spatialBlend = 1.0f; // 3D sound
         audioSource.Play();
     }
 
     void Update()
     {
-        // This function runs every frame to update the sound's pitch
         UpdateEngineSound();
     }
 
     void UpdateEngineSound()
     {
-        if (engineSound == null) return; // Don't do anything if no sound is assigned
+        if (rb == null || audioSource == null) return;
+        float speed = rb.linearVelocity.magnitude;
+        float pitch = Mathf.Lerp(minPitch, maxPitch, speed / maxSpeedForPitch);
+        audioSource.pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+    }
 
-        // Calculate current speed as a fraction of the max speed
-        // (rb.linearVelocity.magnitude * 3.6f) converts the speed to KM/H --- THIS LINE IS UPDATED
-        float speedFraction = Mathf.Clamp01((rb.linearVelocity.magnitude * 3.6f) / maxSpeedForPitch);
+    // --- NEW PUBLIC METHODS ---
+    public void PauseSound()
+    {
+        audioSource.Pause();
+    }
 
-        // Smoothly adjust the pitch between our min and max values based on the car's speed
-        audioSource.pitch = Mathf.Lerp(minPitch, maxPitch, speedFraction);
+    public void ResumeSound()
+    {
+        audioSource.UnPause();
+    }
+
+    public void StopSound()
+    {
+        audioSource.Stop();
     }
 }
 
