@@ -1,5 +1,6 @@
 using UnityEngine;
-using System.Collections.Generic; // Needed for using Lists
+using System.Collections.Generic;
+using TMPro; // --- NEW: Required for using TextMeshPro UI elements
 
 public class GameManager : MonoBehaviour
 {
@@ -11,15 +12,22 @@ public class GameManager : MonoBehaviour
     public GameObject dropOffPrefab;
     public List<Transform> spawnPoints;
 
+    // --- NEW: UI and Timer Variables ---
+    [Header("UI & Timer Settings")]
+    public TextMeshProUGUI timerText; // Reference to the timer UI text
+    public float startingTime = 60f; // Time in seconds
+    public float timeBonusPerDelivery = 15f; // Time added for a successful delivery
+
+    private float currentTime;
+    private bool isGameOver = false;
+
     private GameObject currentPackage;
     private GameObject currentDropOffZone;
-
-    // --- NEW VARIABLE ---
-    // This will remember the index of the last spawn point we used.
-    private int lastSpawnIndex = -1; // Start at -1 to guarantee the first pick is always valid.
+    private int lastSpawnIndex = -1;
 
     void Awake()
     {
+        // ... existing Awake code ...
         if (Instance == null)
         {
             Instance = this;
@@ -32,24 +40,47 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // Make sure we have at least 2 spawn points for this logic to work.
+        // ... existing Start code ...
         if (spawnPoints.Count < 2)
         {
             Debug.LogError("Not enough spawn points! Please add at least 2 spawn points to the GameManager.");
             return;
         }
+
+        // --- NEW: Initialize the timer ---
+        currentTime = startingTime;
+        isGameOver = false;
+
         SpawnNewPackage();
+    }
+
+    // --- NEW: Update function to handle the countdown ---
+    void Update()
+    {
+        // If the game is over, do nothing.
+        if (isGameOver) return;
+
+        // Decrease the current time
+        currentTime -= Time.deltaTime;
+
+        // Check if time has run out
+        if (currentTime <= 0)
+        {
+            currentTime = 0;
+            isGameOver = true;
+            Debug.Log("GAME OVER!");
+            // TODO: Show a Game Over screen
+        }
+
+        // Update the UI text
+        UpdateTimerUI();
     }
 
     public void OnPackagePickedUp()
     {
+        // ... existing OnPackagePickedUp code ...
         Debug.Log("GameManager knows package was picked up.");
-
-        if (currentDropOffZone != null)
-        {
-            Destroy(currentDropOffZone);
-        }
-
+        if (currentDropOffZone != null) { Destroy(currentDropOffZone); }
         SpawnDropOffZone();
     }
 
@@ -57,45 +88,42 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("GameManager knows package was delivered.");
 
-        // TODO: Add time to timer
+        // --- UPDATED: Add time bonus on delivery ---
+        currentTime += timeBonusPerDelivery;
 
         SpawnNewPackage();
     }
 
-    // --- UPDATED LOGIC ---
+    // --- NEW: Function to format and update the UI ---
+    private void UpdateTimerUI()
+    {
+        if (timerText != null)
+        {
+            // Format the time into minutes and seconds for display
+            int minutes = Mathf.FloorToInt(currentTime / 60);
+            int seconds = Mathf.FloorToInt(currentTime % 60);
+            timerText.text = string.Format("Time: {0:00}:{1:00}", minutes, seconds);
+        }
+    }
+
+    // --- Spawn logic remains the same ---
     private void SpawnNewPackage()
     {
+        // ... existing SpawnNewPackage code ...
         int spawnIndex;
-        // Keep picking a random index until we get one that is different from the last one.
-        do
-        {
-            spawnIndex = Random.Range(0, spawnPoints.Count);
-        }
-        while (spawnIndex == lastSpawnIndex);
-
-        // We have a new, unique index. Use it and then save it for the next check.
+        do { spawnIndex = Random.Range(0, spawnPoints.Count); } while (spawnIndex == lastSpawnIndex);
         lastSpawnIndex = spawnIndex;
         Transform spawnPoint = spawnPoints[spawnIndex];
-
         currentPackage = Instantiate(packagePrefab, spawnPoint.position, spawnPoint.rotation);
     }
 
-    // --- UPDATED LOGIC ---
     private void SpawnDropOffZone()
     {
+        // ... existing SpawnDropOffZone code ...
         int spawnIndex;
-        // Keep picking a random index until we get one that is different from the last one.
-        do
-        {
-            spawnIndex = Random.Range(0, spawnPoints.Count);
-        }
-        while (spawnIndex == lastSpawnIndex);
-
-        // We have a new, unique index. Use it and then save it for the next check.
+        do { spawnIndex = Random.Range(0, spawnPoints.Count); } while (spawnIndex == lastSpawnIndex);
         lastSpawnIndex = spawnIndex;
         Transform spawnPoint = spawnPoints[spawnIndex];
-
-        // We make the drop-off zone active before instantiating it
         dropOffPrefab.SetActive(true);
         currentDropOffZone = Instantiate(dropOffPrefab, spawnPoint.position, Quaternion.identity);
     }
