@@ -3,17 +3,35 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    // This function will be called by the Play Button
-    public void PlayGame()
+    [Header("UI Panels")]
+    public GameObject mainMenuPanel;
+    public GameObject objectivePanel;
+
+    void Start()
     {
-        // Make sure your main game scene is named "GameScene"
+        // On start, ensure the main menu is visible and the objective panel is not.
+        mainMenuPanel.SetActive(true);
+        objectivePanel.SetActive(false);
+    }
+
+    public void ShowObjectiveScreen()
+    {
+        // This function is called by the "Play" button.
+        mainMenuPanel.SetActive(false);
+        objectivePanel.SetActive(true);
+    }
+
+    public void StartGame()
+    {
+        // This function is called by the "Start" button on the objective screen.
         SceneManager.LoadScene("GameScene");
     }
 
-    // This function will be called by the Exit Button
     public void QuitGame()
     {
-        Debug.Log("QUIT!"); // This shows up in the editor
-        Application.Quit(); // This only works in a built game
+        // This function is called by the "Exit" button.
+        Debug.Log("Quitting Game...");
+        Application.Quit();
     }
 }
+
