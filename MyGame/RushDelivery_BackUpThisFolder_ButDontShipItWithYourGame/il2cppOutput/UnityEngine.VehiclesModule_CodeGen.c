@@ -1,0 +1,101 @@
+﻿#include "pch-c.h"
+
+
+#include "codegen/il2cpp-codegen-metadata.h"
+
+
+
+
+
+extern void WheelHit_get_point_m9F7E614D1E1C6BAAF3392D3E21FF98FB9C9E370C (void);
+extern void WheelCollider_get_radius_m68CC3DE301E0C6226E85F99D853365DA1244CD1F (void);
+extern void WheelCollider_get_suspensionDistance_mD1EE97B03FB1E744BCF24DC988806F52AE98A55F (void);
+extern void WheelCollider_get_sidewaysFriction_m7924ABBBB268B7F1FD8630733B6375CAFC2621E8 (void);
+extern void WheelCollider_set_sidewaysFriction_mB2062696F29B4275C7F5B2874FD333ECD2325DA8 (void);
+extern void WheelCollider_set_motorTorque_m4958AAF7D867CF7570420F9BAFAF04DC904F02A8 (void);
+extern void WheelCollider_set_brakeTorque_mB9B216C57C275470907C7DB35185E2F192DC8DAB (void);
+extern void WheelCollider_set_steerAngle_m7BF83B27D8956355F873537939BE9F35CF3113C3 (void);
+extern void WheelCollider_GetWorldPose_m8C41FA2AE9ED543AB94A6E3226523A2FE83FA890 (void);
+extern void WheelCollider_GetGroundHit_mCB73878577BC5AAEBEA8572FA62326C4C71B3EF2 (void);
+extern void WheelCollider__ctor_mD44B2C97960274797DABD055BBEB18E664DAD906 (void);
+extern void WheelCollider_get_radius_Injected_m5CD5D0CB11C12B733B28C52AA4E40E88DA2A5FE0 (void);
+extern void WheelCollider_get_suspensionDistance_Injected_m850774CCC703B484661C119D1808EA0484D86E7F (void);
+extern void WheelCollider_get_sidewaysFriction_Injected_m115463FA7EB8BB2ED03141EC55FDEE029BBB2C73 (void);
+extern void WheelCollider_set_sidewaysFriction_Injected_m42CC1E33775FF0A3EA7D33C44DC1F4F6E4C24DA1 (void);
+extern void WheelCollider_set_motorTorque_Injected_mDC3AFD111B0711D6D7450F3FDCC18386352888C2 (void);
+extern void WheelCollider_set_brakeTorque_Injected_mF745FF43BCCE204923ABCF9FD3F0725BFB6927E2 (void);
+extern void WheelCollider_set_steerAngle_Injected_m1D19C28872BFFC9C692FA4F50454A3400D5ACC20 (void);
+extern void WheelCollider_GetWorldPose_Injected_m5CADCBBA43204BA3C8EF66B85A568D7A685B28AE (void);
+extern void WheelCollider_GetGroundHit_Injected_m8297D4243D94F040DA26F6B09714046754B73AAB (void);
+static Il2CppMethodPointer s_methodPointers[20] = 
+{
+	WheelHit_get_point_m9F7E614D1E1C6BAAF3392D3E21FF98FB9C9E370C,
+	WheelCollider_get_radius_m68CC3DE301E0C6226E85F99D853365DA1244CD1F,
+	WheelCollider_get_suspensionDistance_mD1EE97B03FB1E744BCF24DC988806F52AE98A55F,
+	WheelCollider_get_sidewaysFriction_m7924ABBBB268B7F1FD8630733B6375CAFC2621E8,
+	WheelCollider_set_sidewaysFriction_mB2062696F29B4275C7F5B2874FD333ECD2325DA8,
+	WheelCollider_set_motorTorque_m4958AAF7D867CF7570420F9BAFAF04DC904F02A8,
+	WheelCollider_set_brakeTorque_mB9B216C57C275470907C7DB35185E2F192DC8DAB,
+	WheelCollider_set_steerAngle_m7BF83B27D8956355F873537939BE9F35CF3113C3,
+	WheelCollider_GetWorldPose_m8C41FA2AE9ED543AB94A6E3226523A2FE83FA890,
+	WheelCollider_GetGroundHit_mCB73878577BC5AAEBEA8572FA62326C4C71B3EF2,
+	WheelCollider__ctor_mD44B2C97960274797DABD055BBEB18E664DAD906,
+	WheelCollider_get_radius_Injected_m5CD5D0CB11C12B733B28C52AA4E40E88DA2A5FE0,
+	WheelCollider_get_suspensionDistance_Injected_m850774CCC703B484661C119D1808EA0484D86E7F,
+	WheelCollider_get_sidewaysFriction_Injected_m115463FA7EB8BB2ED03141EC55FDEE029BBB2C73,
+	WheelCollider_set_sidewaysFriction_Injected_m42CC1E33775FF0A3EA7D33C44DC1F4F6E4C24DA1,
+	WheelCollider_set_motorTorque_Injected_mDC3AFD111B0711D6D7450F3FDCC18386352888C2,
+	WheelCollider_set_brakeTorque_Injected_mF745FF43BCCE204923ABCF9FD3F0725BFB6927E2,
+	WheelCollider_set_steerAngle_Injected_m1D19C28872BFFC9C692FA4F50454A3400D5ACC20,
+	WheelCollider_GetWorldPose_Injected_m5CADCBBA43204BA3C8EF66B85A568D7A685B28AE,
+	WheelCollider_GetGroundHit_Injected_m8297D4243D94F040DA26F6B09714046754B73AAB,
+};
+extern void WheelHit_get_point_m9F7E614D1E1C6BAAF3392D3E21FF98FB9C9E370C_AdjustorThunk (void);
+static Il2CppTokenAdjustorThunkPair s_adjustorThunks[1] = 
+{
+	{ 0x06000001, WheelHit_get_point_m9F7E614D1E1C6BAAF3392D3E21FF98FB9C9E370C_AdjustorThunk },
+};
+static const int32_t s_InvokerIndices[20] = 
+{
+	13029,
+	12946,
+	12946,
+	13042,
+	10067,
+	9973,
+	9973,
+	9973,
+	3995,
+	6734,
+	13040,
+	21130,
+	21130,
+	18778,
+	18778,
+	18784,
+	18784,
+	18784,
+	16954,
+	17706,
+};
+IL2CPP_EXTERN_C const Il2CppCodeGenModule g_UnityEngine_VehiclesModule_CodeGenModule;
+const Il2CppCodeGenModule g_UnityEngine_VehiclesModule_CodeGenModule = 
+{
+	"UnityEngine.VehiclesModule.dll",
+	20,
+	s_methodPointers,
+	1,
+	s_adjustorThunks,
+	s_InvokerIndices,
+	0,
+	NULL,
+	0,
+	NULL,
+	0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};

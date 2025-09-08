@@ -35,10 +35,14 @@ public class CarController : MonoBehaviour
     [Header("UI")]
     public Text speedText;
 
-    private float inputSteer;
-    private float inputMotor;
-    private float inputBrake;
+    // --- Variables for touch controls ---
+    private float steerInput;
+    private float gasInput;
+    private float brakeInput;
+
+    // --- Private variables ---
     private Rigidbody rb;
+
 
     void Start()
     {
@@ -49,7 +53,6 @@ public class CarController : MonoBehaviour
 
     void Update()
     {
-        GetInput();
         UpdateWheelVisuals();
         UpdateSpeedUI();
     }
@@ -63,16 +66,24 @@ public class CarController : MonoBehaviour
         ApplyAntiRoll(rearLeftWheel, rearRightWheel);
     }
 
-    void GetInput()
-    {
-        inputMotor = Input.GetAxis("Vertical");
-        inputSteer = Input.GetAxis("Horizontal");
-        inputBrake = Input.GetKey(KeyCode.Space) ? 1f : 0f;
-    }
+    // --- Public methods for button events ---
+    public void StartSteeringLeft() { steerInput = -1; }
+    public void StartSteeringRight() { steerInput = 1; }
+    public void StopSteering() { steerInput = 0; }
+
+    public void StartAccelerating() { gasInput = 1; }
+    public void StopAccelerating() { gasInput = 0; }
+
+    public void StartReversing() { gasInput = -1; }
+    public void StopReversing() { gasInput = 0; }
+
+    public void StartBraking() { brakeInput = 1; }
+    public void StopBraking() { brakeInput = 0; }
+
 
     void ApplyMotorTorque()
     {
-        float torque = inputMotor * motorTorque;
+        float torque = gasInput * motorTorque;
 
         if (frontWheelDrive || allWheelDrive)
         {
@@ -86,7 +97,7 @@ public class CarController : MonoBehaviour
             rearRightWheel.motorTorque = torque;
         }
 
-        if (inputMotor == 0 && inputBrake == 0)
+        if (gasInput == 0 && brakeInput == 0)
         {
             frontLeftWheel.brakeTorque = decelerationForce;
             frontRightWheel.brakeTorque = decelerationForce;
@@ -107,15 +118,16 @@ public class CarController : MonoBehaviour
         float speed = rb.linearVelocity.magnitude;
         float steerFactor = Mathf.Clamp01(speed / 50f);
         float adjustedSteer = Mathf.Lerp(maxSteerAngle, maxSteerAngle * 0.6f, steerFactor);
-        float steerAngle = inputSteer * adjustedSteer;
+        float steerAngle = steerInput * adjustedSteer; // Corrected variable name
 
+        // Apply steering to both front wheels
         frontLeftWheel.steerAngle = steerAngle;
         frontRightWheel.steerAngle = steerAngle;
     }
 
     void ApplyBrakes()
     {
-        float brake = inputBrake * brakeForce;
+        float brake = brakeInput * brakeForce;
 
         frontLeftWheel.brakeTorque = brake;
         frontRightWheel.brakeTorque = brake;

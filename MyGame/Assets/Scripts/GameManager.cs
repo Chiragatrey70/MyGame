@@ -1,22 +1,18 @@
-using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 using UnityEngine.SceneManagement;
+using TMPro;
+using System.Collections.Generic;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Game Objects")]
-    public GameObject packagePrefab;
-    public GameObject dropOffPrefab;
-    public List<Transform> spawnPoints;
-    public CarController playerCarController;
-
     [Header("UI Elements")]
-    public GameObject inGameHUD; // NEW: Reference for the entire HUD group
     public TextMeshProUGUI timerText;
     public TextMeshProUGUI deliveriesCounterText;
+    public GameObject inGameHUD;
+    public GameObject touchControlsUI; // New field for touch controls
     public GameObject gameOverPanel;
     public GameObject pauseMenuPanel;
 
@@ -24,127 +20,145 @@ public class GameManager : MonoBehaviour
     public float startingTime = 60f;
     public float timeBonus = 15f;
     private float currentTime;
+    private int deliveriesCompleted = 0;
 
     [Header("Game State")]
-    public bool isGameOver = false;
-    public bool isPaused = false;
-    private int deliveriesCompleted = 0;
+    private bool isPaused = false;
+    private bool isGameOver = false;
+
+    [Header("Gameplay Objects")]
+    public GameObject packagePrefab;
+    public GameObject dropOffPrefab;
+    public List<Transform> spawnPoints;
     private GameObject currentPackage;
-    private GameObject currentDropOff;
+    private GameObject currentDropOffZone;
     private int lastSpawnIndex = -1;
+
+    [Header("Player References")]
+    public CarController playerCarController;
+
+    [Header("Audio")]
+    public CarAudio playerCarAudio;
 
     [Header("Minimap")]
     public MinimapIcon objectiveIcon;
     public Transform playerTransform;
     public Camera minimapCamera;
     public RectTransform minimapRect;
-
-    [Header("Audio")]
-    public CarAudio playerCarAudio;
+    private Transform currentObjectiveTransform;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     void Start()
     {
         Time.timeScale = 1f;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-
         currentTime = startingTime;
-        if (inGameHUD != null) inGameHUD.SetActive(true); // NEW: Ensure HUD is on at start
+        isGameOver = false;
+        isPaused = false;
+
+        inGameHUD.SetActive(true);
+        touchControlsUI.SetActive(true); // Show touch controls at start
         gameOverPanel.SetActive(false);
         pauseMenuPanel.SetActive(false);
-        isGameOver = false;
 
-        deliveriesCompleted = 0;
         UpdateDeliveriesUI();
-
-        if (playerCarController != null) playerCarController.enabled = true;
-
-        if (objectiveIcon != null)
-        {
-            objectiveIcon.player = playerTransform;
-            objectiveIcon.minimapCamera = minimapCamera;
-            objectiveIcon.mapRect = minimapRect;
-            objectiveIcon.gameObject.SetActive(false);
-        }
-
         SpawnNewPackage();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (isGameOver) return;
-            if (isPaused) ResumeGame();
-            else PauseGame();
-        }
-
         if (isGameOver || isPaused) return;
 
         currentTime -= Time.deltaTime;
+        UpdateTimerUI();
+
         if (currentTime <= 0)
         {
             currentTime = 0;
             GameOver();
         }
-        UpdateTimerUI();
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (isPaused)
+                ResumeGame();
+            else
+                PauseGame();
+        }
+
+        UpdateObjectiveIcon();
     }
 
-    public void PauseGame()
+    void SpawnNewPackage()
     {
-        isPaused = true;
-        Time.timeScale = 0f;
-        if (inGameHUD != null) inGameHUD.SetActive(false); // NEW: Hide HUD
-        pauseMenuPanel.SetActive(true); // CORRECTED: Removed hyphen
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        if (playerCarAudio != null) playerCarAudio.PauseSound();
+        if (currentPackage != null) Destroy(currentPackage);
+
+        int spawnIndex;
+        do
+        {
+            spawnIndex = Random.Range(0, spawnPoints.Count);
+        } while (spawnPoints.Count > 1 && spawnIndex == lastSpawnIndex);
+
+        lastSpawnIndex = spawnIndex;
+        Transform spawnPoint = spawnPoints[spawnIndex];
+        currentPackage = Instantiate(packagePrefab, spawnPoint.position, spawnPoint.rotation);
+        SetObjectiveIconTarget(currentPackage.transform);
     }
 
-    public void ResumeGame()
+    void SpawnDropOffZone()
     {
-        isPaused = false;
-        Time.timeScale = 1f;
-        if (inGameHUD != null) inGameHUD.SetActive(true); // NEW: Show HUD
-        pauseMenuPanel.SetActive(false);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        if (playerCarAudio != null) playerCarAudio.ResumeSound();
+        if (currentDropOffZone != null) Destroy(currentDropOffZone);
+
+        int spawnIndex;
+        do
+        {
+            spawnIndex = Random.Range(0, spawnPoints.Count);
+        } while (spawnPoints.Count > 1 && spawnIndex == lastSpawnIndex);
+
+        lastSpawnIndex = spawnIndex;
+        Transform spawnPoint = spawnPoints[spawnIndex];
+        currentDropOffZone = Instantiate(dropOffPrefab, spawnPoint.position, spawnPoint.rotation);
+        SetObjectiveIconTarget(currentDropOffZone.transform);
     }
 
-    void GameOver()
+    public void OnPackagePickedUp()
     {
-        if (isGameOver) return;
-        isGameOver = true;
-        Time.timeScale = 0f;
-        if (inGameHUD != null) inGameHUD.SetActive(false); // NEW: Hide HUD
-        gameOverPanel.SetActive(true);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        if (playerCarController != null) playerCarController.enabled = false;
-        if (playerCarAudio != null) playerCarAudio.StopSound();
+        if (isGameOver || isPaused) return;
+        if (currentPackage == null) return;
+
+        Destroy(currentPackage);
+        currentPackage = null;
+        SpawnDropOffZone();
     }
 
-    // --- Other existing functions ---
     public void OnPackageDelivered()
     {
         if (isGameOver || isPaused) return;
-        if (currentDropOff != null)
+        if (currentDropOffZone == null) return;
+
+        Destroy(currentDropOffZone);
+        currentDropOffZone = null;
+        currentTime += timeBonus;
+        deliveriesCompleted++;
+        UpdateDeliveriesUI();
+        SpawnNewPackage();
+    }
+
+    void UpdateTimerUI()
+    {
+        if (timerText != null)
         {
-            Destroy(currentDropOff);
-            currentDropOff = null;
-            currentTime += timeBonus;
-
-            deliveriesCompleted++;
-            UpdateDeliveriesUI();
-
-            SpawnNewPackage();
+            timerText.text = "Time: " + Mathf.RoundToInt(currentTime);
         }
     }
 
@@ -156,73 +170,71 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void PauseGame()
+    {
+        isPaused = true;
+        Time.timeScale = 0f;
+        pauseMenuPanel.SetActive(true);
+        inGameHUD.SetActive(false);
+        touchControlsUI.SetActive(false); // Hide touch controls
+        playerCarController.enabled = false;
+        if (playerCarAudio != null) playerCarAudio.PauseSound();
+    }
+
+    public void ResumeGame()
+    {
+        isPaused = false;
+        Time.timeScale = 1f;
+        pauseMenuPanel.SetActive(false);
+        inGameHUD.SetActive(true);
+        touchControlsUI.SetActive(true); // Show touch controls
+        playerCarController.enabled = true;
+        if (playerCarAudio != null) playerCarAudio.ResumeSound();
+    }
+
+    void GameOver()
+    {
+        isGameOver = true;
+        Time.timeScale = 0f;
+        gameOverPanel.SetActive(true);
+        inGameHUD.SetActive(false);
+        touchControlsUI.SetActive(false); // Hide touch controls
+        playerCarController.enabled = false;
+        if (playerCarAudio != null) playerCarAudio.StopSound();
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     public void ReturnToMainMenu()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenuScene");
     }
 
-    void SpawnNewPackage()
+    void SetObjectiveIconTarget(Transform target)
     {
-        if (objectiveIcon != null) objectiveIcon.gameObject.SetActive(false);
-
-        int spawnIndex;
-        do
-        {
-            spawnIndex = Random.Range(0, spawnPoints.Count);
-        } while (spawnPoints.Count > 1 && spawnIndex == lastSpawnIndex);
-        lastSpawnIndex = spawnIndex;
-
-        currentPackage = Instantiate(packagePrefab, spawnPoints[spawnIndex].position, spawnPoints[spawnIndex].rotation);
-
+        currentObjectiveTransform = target;
         if (objectiveIcon != null)
         {
-            objectiveIcon.SetTarget(currentPackage.transform);
             objectiveIcon.gameObject.SetActive(true);
         }
     }
 
-    void SpawnDropOffZone()
+    void UpdateObjectiveIcon()
     {
-        int spawnIndex;
-        do
-        {
-            spawnIndex = Random.Range(0, spawnPoints.Count);
-        } while (spawnPoints.Count > 1 && spawnIndex == lastSpawnIndex);
-        lastSpawnIndex = spawnIndex;
+        if (objectiveIcon == null || !objectiveIcon.gameObject.activeInHierarchy) return;
 
-        currentDropOff = Instantiate(dropOffPrefab, spawnPoints[spawnIndex].position, spawnPoints[spawnIndex].rotation);
-        if (currentDropOff != null) currentDropOff.SetActive(true);
+        Vector3 screenPos = minimapCamera.WorldToScreenPoint(currentObjectiveTransform.position);
 
-        if (objectiveIcon != null && currentDropOff != null)
-        {
-            objectiveIcon.SetTarget(currentDropOff.transform);
-            objectiveIcon.gameObject.SetActive(true);
-        }
-    }
+        RectTransform minimapImageRect = minimapRect;
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(minimapImageRect, screenPos, null, out localPoint);
 
-    public void OnPackagePickedUp()
-    {
-        if (isGameOver || isPaused) return;
-        if (currentPackage != null)
-        {
-            Destroy(currentPackage);
-            currentPackage = null;
-            SpawnDropOffZone();
-        }
-    }
-
-    void UpdateTimerUI()
-    {
-        if (timerText != null)
-        {
-            timerText.text = "Time: " + Mathf.RoundToInt(currentTime);
-        }
-    }
-
-    public void RestartGame()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        objectiveIcon.GetComponent<RectTransform>().localPosition = localPoint;
     }
 }
 
